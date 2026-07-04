@@ -1,0 +1,22 @@
+# Core data and machine learning tools.
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.4.2
+matplotlib==3.8.4
+seaborn==0.13.2
+joblib==1.4.2
+
+# API tools.
+fastapi==0.111.0
+uvicorn==0.30.1
+requests==2.32.3
+
+# Database drivers.
+mysql-connector-python==8.4.0
+pymongo==4.7.2
+
+# Notebook for Task 1.
+jupyter==1.0.0
+
+# Used to build the PDF version of the report.
+reportlab==4.5.1

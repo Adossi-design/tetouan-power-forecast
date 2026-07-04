@@ -1,0 +1,20 @@
+# Python cache and virtual environments.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Local archive file.
+archive.zip
+
+# The trained model is rebuilt by running python src/train.py
+models/*.pkl
+
+# Operating system and editor files.
+.DS_Store
+.vscode/
+.idea/
+
+# This folder should be ignored.
+report/
