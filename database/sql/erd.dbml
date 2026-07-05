@@ -1,0 +1,26 @@
+// Task 2 by Shem Ayioka.
+// This file describes the database as a diagram in DBML format.
+// Paste it into https://dbdiagram.io to see the picture.
+// Then use Export to save a PNG for the report.
+// It matches database/sql/schema.sql.
+
+Table zones {
+  zone_id   int [pk]
+  zone_name varchar
+}
+
+Table weather {
+  datetime              datetime [pk]
+  temperature           float
+  humidity              float
+  wind_speed            float
+  general_diffuse_flows float
+  diffuse_flows         float
+}
+
+Table power_consumption {
+  id          int [pk, increment]
+  datetime    datetime [ref: > weather.datetime]
+  zone_id     int      [ref: > zones.zone_id]
+  consumption float
+}
