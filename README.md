@@ -28,6 +28,7 @@ tetouan-power-forecast/
 │   └── mongodb/{design.md, load_data.py, queries.js}
 ├── api/main.py
 ├── predict.py
+├── figures/                  (the plots and the ERD image used in the report)
 └── report/{report.md, build_pdf.py, report.pdf}
 ```
 
@@ -97,7 +98,7 @@ python database/mongodb/load_data.py
 mongosh tetouan_power database/mongodb/queries.js
 ```
 
-For the diagram picture, go to https://dbdiagram.io, paste in the contents of `database/sql/erd.dbml`, and export it as a PNG into the report folder.
+The diagram picture is already generated and included at `figures/erd.png`, so you do not need to make it again. If you ever change the schema and want to refresh the diagram, go to https://dbdiagram.io, paste in the contents of `database/sql/erd.dbml`, export it as a PNG, and save it back over `figures/erd.png`.
 
 ### Task 3, the API
 
