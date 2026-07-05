@@ -1,4 +1,4 @@
-"""Task 3 by Samuel Wanjohi.
+""Task 3 by Samuel Wanjohi.
 
 This file is a small REST API that gives CRUD and time queries for both databases.
 """
@@ -46,5 +46,4 @@ class WeatherIn(BaseModel):
     diffuse_flows: float
 
 
-# This shape is used for updates where every field is optional.
-class WeatherUpdate(BaseModel):
+# This shape is used for updates where every
