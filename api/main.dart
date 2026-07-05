@@ -118,4 +118,149 @@ def mysql_read(dt: datetime):
 
 
 @app.put("/mysql/weather/{dt}", tags=["MySQL CRUD"])
-def mysql_update(dt
+def mysql_update(dt: datetime, item: WeatherUpdate):
+    """Update one or more fields of a weather row in MySQL."""
+    # I only update the fields that were actually sent.
+    fields = {k: v for k, v in item.dict().items() if v is not None}
+    if not fields:
+        raise HTTPException(400, "No fields provided to update.")
+    set_clause = ", ".join(f"{k} = %s" for k in fields)
+    conn = mysql_conn()
+    cur = conn.cursor()
+    cur.execute(f"UPDATE weather SET {set_clause} WHERE datetime = %s",
+                list(fields.values()) + [dt])
+    conn.commit()
+    affected = cur.rowcount
+    cur.close()
+    conn.close()
+    if affected == 0:
+        raise HTTPException(404, "No weather record at that datetime.")
+    return {"status": "updated", "datetime": dt, "fields": fields}
+
+
+@app.delete("/mysql/weather/{dt}", tags=["MySQL CRUD"])
+def mysql_delete(dt: datetime):
+    """Delete one weather row from MySQL."""
+    conn = mysql_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM weather WHERE datetime = %s", (dt,))
+    conn.commit()
+    affected = cur.rowcount
+    cur.close()
+    conn.close()
+    if affected == 0:
+        raise HTTPException(404, "No weather record at that datetime.")
+    return {"status": "deleted", "datetime": dt}
+
+
+@app.get("/mysql/latest", tags=["MySQL time-series"])
+def mysql_latest():
+    """Return the newest weather record from MySQL."""
+    conn = mysql_conn()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT * FROM weather ORDER BY datetime DESC LIMIT 1")
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if not row:
+        raise HTTPException(404, "Table is empty.")
+    return row
+
+
+@app.get("/mysql/by-date-range", tags=["MySQL time-series"])
+def mysql_range(
+    start: datetime = Query(..., description="ISO datetime like 2017-01-01T00:00:00"),
+    end: datetime = Query(..., description="ISO datetime like 2017-01-01T01:00:00"),
+    limit: int = 100,
+):
+    """Return weather records between two datetimes from MySQL."""
+    conn = mysql_conn()
+    cur = conn.cursor(dictionary=True)
+    cur.execute(
+        "SELECT * FROM weather WHERE datetime BETWEEN %s AND %s "
+        "ORDER BY datetime ASC LIMIT %s",
+        (start, end, limit),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return {"count": len(rows), "records": rows}
+
+
+def _clean(doc):
+    """Remove the Mongo id field so the result can be sent as JSON."""
+    if doc and "_id" in doc:
+        doc.pop("_id")
+    return doc
+
+
+# These routes work on the readings collection in MongoDB.
+@app.post("/mongo/readings", tags=["MongoDB CRUD"])
+def mongo_create(item: WeatherIn):
+    """Create one reading document in MongoDB."""
+    coll = mongo_coll()
+    if coll.find_one({"datetime": item.datetime}):
+        raise HTTPException(400, "A reading already exists at that datetime.")
+    doc = item.dict()
+    # I start with an empty zones list to keep this route simple.
+    doc["zones"] = []
+    doc["total_consumption"] = 0.0
+    coll.insert_one(doc)
+    return {"status": "created", "datetime": item.datetime}
+
+
+@app.get("/mongo/readings/{dt}", tags=["MongoDB CRUD"])
+def mongo_read(dt: datetime):
+    """Read one reading document from MongoDB by its datetime."""
+    coll = mongo_coll()
+    doc = coll.find_one({"datetime": dt})
+    if not doc:
+        raise HTTPException(404, "No reading at that datetime.")
+    return _clean(doc)
+
+
+@app.put("/mongo/readings/{dt}", tags=["MongoDB CRUD"])
+def mongo_update(dt: datetime, item: WeatherUpdate):
+    """Update one or more fields of a reading in MongoDB."""
+    fields = {k: v for k, v in item.dict().items() if v is not None}
+    if not fields:
+        raise HTTPException(400, "No fields provided to update.")
+    coll = mongo_coll()
+    result = coll.update_one({"datetime": dt}, {"$set": fields})
+    if result.matched_count == 0:
+        raise HTTPException(404, "No reading at that datetime.")
+    return {"status": "updated", "datetime": dt, "fields": fields}
+
+
+@app.delete("/mongo/readings/{dt}", tags=["MongoDB CRUD"])
+def mongo_delete(dt: datetime):
+    """Delete one reading document from MongoDB."""
+    coll = mongo_coll()
+    result = coll.delete_one({"datetime": dt})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "No reading at that datetime.")
+    return {"status": "deleted", "datetime": dt}
+
+
+@app.get("/mongo/latest", tags=["MongoDB time-series"])
+def mongo_latest():
+    """Return the newest reading from MongoDB."""
+    coll = mongo_coll()
+    doc = coll.find_one(sort=[("datetime", DESCENDING)])
+    if not doc:
+        raise HTTPException(404, "Collection is empty.")
+    return _clean(doc)
+
+
+@app.get("/mongo/by-date-range", tags=["MongoDB time-series"])
+def mongo_range(
+    start: datetime = Query(..., description="ISO datetime"),
+    end: datetime = Query(..., description="ISO datetime"),
+    limit: int = 100,
+):
+    """Return readings between two datetimes from MongoDB."""
+    coll = mongo_coll()
+    cursor = (coll.find({"datetime": {"$gte": start, "$lte": end}})
+                  .sort("datetime", ASCENDING).limit(limit))
+    records = [_clean(d) for d in cursor]
+    return {"count": len(records), "records": records}
