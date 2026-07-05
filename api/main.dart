@@ -1,4 +1,4 @@
-""Task 3 by Samuel Wanjohi.
+"""Task 3 by Samuel Wanjohi.
 
 This file is a small REST API that gives CRUD and time queries for both databases.
 """
@@ -46,4 +46,76 @@ class WeatherIn(BaseModel):
     diffuse_flows: float
 
 
-# This shape is used for updates where every
+# This shape is used for updates where every field is optional.
+class WeatherUpdate(BaseModel):
+    temperature: Optional[float] = None
+    humidity: Optional[float] = None
+    wind_speed: Optional[float] = None
+    general_diffuse_flows: Optional[float] = None
+    diffuse_flows: Optional[float] = None
+
+
+def mysql_conn():
+    """Open and return a MySQL connection."""
+    if mysql is None:
+        raise HTTPException(500, "mysql-connector-python is not installed.")
+    return mysql.connector.connect(**config.MYSQL)
+
+
+def mongo_coll():
+    """Open and return the MongoDB readings collection."""
+    if MongoClient is None:
+        raise HTTPException(500, "pymongo is not installed.")
+    client = MongoClient(config.MONGODB["uri"])
+    return client[config.MONGODB["database"]][config.MONGODB["collection"]]
+
+
+@app.get("/")
+def home():
+    """Show a small message so you know the API is running."""
+    return {
+        "message": "Tetouan Power API is running.",
+        "docs": "/docs",
+        "mysql_routes": "/mysql/...",
+        "mongo_routes": "/mongo/...",
+    }
+
+
+# These routes work on the weather table in MySQL.
+@app.post("/mysql/weather", tags=["MySQL CRUD"])
+def mysql_create(item: WeatherIn):
+    """Create one weather row in MySQL."""
+    conn = mysql_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "INSERT INTO weather (datetime, temperature, humidity, wind_speed, "
+            "general_diffuse_flows, diffuse_flows) VALUES (%s,%s,%s,%s,%s,%s)",
+            (item.datetime, item.temperature, item.humidity, item.wind_speed,
+             item.general_diffuse_flows, item.diffuse_flows),
+        )
+        conn.commit()
+    except Exception as e:
+        raise HTTPException(400, f"Insert failed: {e}")
+    finally:
+        cur.close()
+        conn.close()
+    return {"status": "created", "datetime": item.datetime}
+
+
+@app.get("/mysql/weather/{dt}", tags=["MySQL CRUD"])
+def mysql_read(dt: datetime):
+    """Read one weather row from MySQL by its datetime."""
+    conn = mysql_conn()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT * FROM weather WHERE datetime = %s", (dt,))
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if not row:
+        raise HTTPException(404, "No weather record at that datetime.")
+    return row
+
+
+@app.put("/mysql/weather/{dt}", tags=["MySQL CRUD"])
+def mysql_update(dt
