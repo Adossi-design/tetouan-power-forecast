@@ -34,3 +34,17 @@ app = FastAPI(
     description="CRUD and time queries over MySQL and MongoDB.",
     version="1.0",
 )
+
+
+# This shape is used when someone creates or reads a weather record.
+class WeatherIn(BaseModel):
+    datetime: datetime
+    temperature: float
+    humidity: float
+    wind_speed: float
+    general_diffuse_flows: float
+    diffuse_flows: float
+
+
+# This shape is used for updates where every field is optional.
+class WeatherUpdate(BaseModel):
