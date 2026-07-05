@@ -28,8 +28,7 @@ tetouan-power-forecast/
 │   └── mongodb/{design.md, load_data.py, queries.js}
 ├── api/main.py
 ├── predict.py
-├── figures/                  (the plots and the ERD image used in the report)
-└── report/{report.md, build_pdf.py, report.pdf}
+└── figures/                  (the plots and the ERD image used in the report)
 ```
 
 ## Who did what
@@ -133,14 +132,6 @@ python predict.py
 ```
 
 If the API or the database is not running, the script falls back to the last timestamp in the CSV, so it will still run all the way through even during a quick demo.
-
-## Building the PDF report
-
-The written report lives in `report/report.md`, and the repo includes a small script that turns it into a PDF. Run it after you have filled in your names.
-
-```bash
-python report/build_pdf.py
-```
 
 ## Reproducing the results
 
