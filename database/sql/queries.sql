@@ -12,11 +12,6 @@ JOIN   zones z ON z.zone_id = pc.zone_id
 GROUP  BY z.zone_name
 ORDER  BY avg_consumption DESC;
 
--- Expected result is about:
--- Zone 1  32344.97
--- Zone 2  21042.51
--- Zone 3  17835.41
-
 
 -- Query 2 shows the hour of day with the highest total demand.
 -- I sum all zones per timestamp and then average by hour.
@@ -30,13 +25,6 @@ FROM (
 GROUP BY HOUR(datetime)
 ORDER BY avg_total_demand DESC
 LIMIT 5;
-
--- Expected result top row is the peak hour.
--- hour 20  about 98037
--- hour 19  about 95645
--- hour 21  about 94632
--- hour 22  about 87883
--- hour 18  about 86141
 
 
 -- Query 3 joins weather with total demand grouped by temperature band.
